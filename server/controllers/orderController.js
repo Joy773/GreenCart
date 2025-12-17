@@ -46,3 +46,5 @@ export const getOrderByUserId = async (req, res) => {
         res.json({success: false, message: error.message})
     }
 } 
+
+//Get All orders (for seller / admin) : /api/order/seller
