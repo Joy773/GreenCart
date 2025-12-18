@@ -5,13 +5,20 @@ import toast from "react-hot-toast";
 
 
 const Cart = () => {
-    const {products, currency, cartItems, removeFromCart, getCartCount, updateCartItem, navigate, getCartAmount, user, axios} = useAppContext();
+    const {products, currency, cartItems, removeFromCart, getCartCount, updateCartItem, navigate, getCartAmount, user, axios, setCartItems} = useAppContext();
     const [cartArray, setCartArray] = useState([]);
     const [addresses, setAddresses] = useState([]);
 
     const [showAddress, setShowAddress] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [paymentOption, setPaymentOption] = useState("COD");
+
+    const formatAddress = (address) => {
+        if (!address) return "";
+        return [address.street, address.city, address.state, address.country]
+            .filter(Boolean)
+            .join(", ");
+    };
 
     const getCart = useCallback(() => {
         const tempArray = [];
@@ -53,7 +60,52 @@ const Cart = () => {
     }, [axios])
 
     const placeOrder = async () => {
+        try {
+            if (!user) {
+                return toast.error("Please login to place an order");
+            }
+            if (!selectedAddress?._id) {
+                return toast.error("Please select a delivery address");
+            }
+            if (!cartArray?.length) {
+                return toast.error("Your cart is empty");
+            }
 
+            const payload = {
+                items: cartArray.map((item) => ({
+                    product: item._id,
+                    quantity: item.quantity,
+                })),
+                address: selectedAddress._id,
+            };
+
+            if (paymentOption === "COD") {
+                const { data } = await axios.post("/api/order/cod", payload);
+                if (data.success) {
+                    toast.success(data.message);
+                    setCartItems({});
+                    navigate("/my-orders");
+                } else {
+                    toast.error(data.message);
+                }
+                return;
+            }
+
+            if (paymentOption === "Online") {
+                const { data } = await axios.post("/api/order/stripe", payload);
+                if (data.success && data.url) {
+                    // Redirect to Stripe Checkout
+                    window.location.href = data.url;
+                } else {
+                    toast.error(data.message || "Failed to start online payment");
+                }
+                return;
+            }
+
+            toast.error("Please select a valid payment method.");
+        } catch (error) {
+            toast.error(error.message);
+        }
     }
 
     useEffect(() => {
@@ -128,7 +180,7 @@ const Cart = () => {
                     <div className="relative flex justify-between items-start mt-2">
                         <p className="text-gray-500">
                             {selectedAddress
-                                ? `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.country}`
+                                ? formatAddress(selectedAddress) || "No address found"
                                 : "No address found"}
                         </p>
                         <button onClick={() => setShowAddress(!showAddress)} className="text-primary hover:underline cursor-pointer">
@@ -137,10 +189,7 @@ const Cart = () => {
                         {showAddress && (
                             <div className="absolute top-12 py-1 bg-white border border-gray-300 text-sm w-full">
                                {addresses.map((address, index)=>(<p key={address?._id || index} onClick={() => {setSelectedAddress(address); setShowAddress(false)}} className="text-gray-500 p-2 hover:bg-gray-100 cursor-pointer">
-                                    {address.street}, 
-                                    {address.city},
-                                    {address.state},
-                                    {address.country}
+                                    {formatAddress(address) || "Unnamed address"}
                                 </p>))}
                                 <p onClick={() => navigate("/add-address")} className="text-primary text-center cursor-pointer p-2 hover:bg-primary/10">
                                     Add address
