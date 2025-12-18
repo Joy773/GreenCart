@@ -6,7 +6,7 @@ const AllProducts = () => {
   const { products, searchQuery } = useAppContext();
   const [filteredProducts, setFilteredProducts] = React.useState([]);
   useEffect(() => {
-    if (searchQuery.length > 0) {
+    if (searchQuery?.length > 0) {
       setFilteredProducts(
         products.filter((product) =>
           product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -25,8 +25,8 @@ const AllProducts = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 lg:grid-cols-5 mt-6">
         {filteredProducts
           .filter((product) => product.inStock)
-          .map((product, index) => (
-            <ProductCard key={index} product={product} />
+          .map((product) => (
+            <ProductCard key={product._id} product={product} />
           ))}
       </div>
     </div>

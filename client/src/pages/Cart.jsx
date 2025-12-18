@@ -1,25 +1,56 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAppContext } from "../context/AppContext";
-import { assets, dummyAddress } from "../assets/assets";
+import { assets } from "../assets/assets";
+import toast from "react-hot-toast";
+
 
 const Cart = () => {
-    const {products, currency, cartItems, removeFromCart, getCartCount, updateCartItem, navigate, getCartAmount} = useAppContext();
+    const {products, currency, cartItems, removeFromCart, getCartCount, updateCartItem, navigate, getCartAmount, user, axios} = useAppContext();
     const [cartArray, setCartArray] = useState([]);
-    const [addresses, setAddresses] = useState(dummyAddress);
+    const [addresses, setAddresses] = useState([]);
 
     const [showAddress, setShowAddress] = useState(false);
-    const [selectedAddress, setSelectedAddress] = useState(dummyAddress[0]);
+    const [selectedAddress, setSelectedAddress] = useState(null);
     const [paymentOption, setPaymentOption] = useState("COD");
 
-    const getCart = () => {
-        let tempArray = []
-        for(const key in cartItems){
-            const product = products.find((item)=>item._id === key)
-            product.quantity = cartItems[key]
-            tempArray.push(product)
+    const getCart = useCallback(() => {
+        const tempArray = [];
+        if (!cartItems || !products?.length) {
+            setCartArray([]);
+            return;
         }
-        setCartArray(tempArray)
-    }
+
+        for (const key in cartItems) {
+            const quantity = cartItems[key];
+            if (!quantity || quantity <= 0) continue;
+
+            const product = products.find((item) => item?._id === key);
+            if (!product) continue;
+
+            tempArray.push({ ...product, quantity });
+        }
+
+        setCartArray(tempArray);
+    }, [cartItems, products]);
+
+    const getUserAddress = useCallback(async () => {
+        try {
+            const {data} = await axios.get('/api/address/get')
+            if(data.success){
+                setAddresses(data.addresses);
+                if(data.addresses.length > 0){
+                    setSelectedAddress(data.addresses[0]);
+                }
+            }
+            else
+            {
+                toast.error(data.message);
+            }
+        }
+        catch (error) {
+            toast.error(error.message);
+        }
+    }, [axios])
 
     const placeOrder = async () => {
 
@@ -29,14 +60,20 @@ const Cart = () => {
         if(products.length > 0 && cartItems){
             getCart()
         }
-    }, [products, cartItems])
+    }, [getCart, products.length, cartItems])
 
+    useEffect(() => {
+        if(user)
+        {
+            getUserAddress();
+        }
+    },[user, getUserAddress])
     
     return products.length > 0 && cartItems ? (
         <div className="flex flex-col md:flex-row mt-16">
             <div className='flex-1 max-w-4xl'>
                 <h1 className="text-3xl font-medium mb-6">
-                    Shopping Cart <span className="text-sm text-indigo-500">{getCartCount}</span>
+                    Shopping Cart <span className="text-sm text-indigo-500">({getCartCount()})</span>
                 </h1>
 
                 <div className="grid grid-cols-[2fr_1fr_1fr] text-gray-500 text-base font-medium pb-3">
@@ -49,9 +86,9 @@ const Cart = () => {
                     <div key={index} className="grid grid-cols-[2fr_1fr_1fr] text-gray-500 items-center text-sm md:text-base font-medium pt-3">
                         <div className="flex items-center md:gap-6 gap-3">
                             <div onClick={()=>{
-                                navigate(`/products/${product.category.toLowerCase()}/${product._id}`);scrollTo(0,0)
+                                navigate(`/products/${String(product?.category || "products").toLowerCase()}/${product?._id}`);scrollTo(0,0)
                             }} className="cursor-pointer w-24 h-24 flex items-center justify-center border border-gray-300 rounded overflow-hidden">
-                                <img className="max-w-full h-full object-cover" src={product.image[0]} alt={product.name} />
+                                <img className="max-w-full h-full object-cover" src={product?.image?.[0]} alt={product?.name || "product"} />
                             </div>
                             <div>
                                 <p className="hidden md:block font-semibold">{product.name}</p>
@@ -59,9 +96,9 @@ const Cart = () => {
                                     <p>Weight: <span>{product.weight || "N/A"}</span></p>
                                     <div className='flex items-center'>
                                         <p>Qty:</p>
-                                        <select onChange={e => updateCartItem(product._id, Number(e.target.value))} value={cartItems[product._id]}className='outline-none'>
-                                            {Array(cartItems[product._id] > 9 ? cartItems[product._id] : 9).fill('').map((_, index) => (
-                                                <option key={index} value={index + 1}>{index + 1}</option>
+                                        <select onChange={e => updateCartItem(product._id, Number(e.target.value))} value={cartItems?.[product._id] ?? 1} className='outline-none'>
+                                            {Array((cartItems?.[product._id] ?? 1) > 9 ? (cartItems?.[product._id] ?? 1) : 9).fill('').map((_, i) => (
+                                                <option key={i} value={i + 1}>{i + 1}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -99,7 +136,7 @@ const Cart = () => {
                         </button>
                         {showAddress && (
                             <div className="absolute top-12 py-1 bg-white border border-gray-300 text-sm w-full">
-                               {addresses.map((address, index)=>(<p onClick={() => {setSelectedAddress(address); setShowAddress(false)}} className="text-gray-500 p-2 hover:bg-gray-100">
+                               {addresses.map((address, index)=>(<p key={address?._id || index} onClick={() => {setSelectedAddress(address); setShowAddress(false)}} className="text-gray-500 p-2 hover:bg-gray-100 cursor-pointer">
                                     {address.street}, 
                                     {address.city},
                                     {address.state},
