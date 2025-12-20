@@ -11,7 +11,6 @@ const Cart = () => {
 
     const [showAddress, setShowAddress] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState(null);
-    const [paymentOption, setPaymentOption] = useState("COD");
 
     const formatAddress = (address) => {
         if (!address) return "";
@@ -79,30 +78,14 @@ const Cart = () => {
                 address: selectedAddress._id,
             };
 
-            if (paymentOption === "COD") {
-                const { data } = await axios.post("/api/order/cod", payload);
-                if (data.success) {
-                    toast.success(data.message);
-                    setCartItems({});
-                    navigate("/my-orders");
-                } else {
-                    toast.error(data.message);
-                }
-                return;
+            const { data } = await axios.post("/api/order/cod", payload);
+            if (data.success) {
+                toast.success(data.message);
+                setCartItems({});
+                navigate("/my-orders");
+            } else {
+                toast.error(data.message);
             }
-
-            if (paymentOption === "Online") {
-                const { data } = await axios.post("/api/order/stripe", payload);
-                if (data.success && data.url) {
-                    // Redirect to Stripe Checkout
-                    window.location.href = data.url;
-                } else {
-                    toast.error(data.message || "Failed to start online payment");
-                }
-                return;
-            }
-
-            toast.error("Please select a valid payment method.");
         } catch (error) {
             toast.error(error.message);
         }
@@ -200,10 +183,9 @@ const Cart = () => {
 
                     <p className="text-sm font-medium uppercase mt-6">Payment Method</p>
 
-                    <select onChange={e => setPaymentOption(e.target.value)} className="w-full border border-gray-300 bg-white px-3 py-2 mt-2 outline-none">
-                        <option value="COD">Cash On Delivery</option>
-                        <option value="Online">Online Payment</option>
-                    </select>
+                    <div className="w-full border border-gray-300 bg-white px-3 py-2 mt-2 outline-none">
+                        <p className="text-gray-700">Cash On Delivery (COD)</p>
+                    </div>
                 </div>
 
                 <hr className="border-gray-300" />
@@ -224,7 +206,7 @@ const Cart = () => {
                 </div>
 
                 <button onClick={placeOrder} className="w-full py-3 mt-6 cursor-pointer bg-primary text-white font-medium hover:bg-primary-dull transition">
-                    {paymentOption === "COD" ? "Place Order" : "Proced to Checkout"}
+                    Place Order
                 </button>
             </div>
         </div>

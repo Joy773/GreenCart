@@ -16,10 +16,13 @@ const Login = () => {
     });
     if(data.success)
     {
-      toast.success(data.message);
-      navigate("/");
+      toast.success(data.message || "Login successful");
       setUser(data.user);
       setShowUserLogin(false);
+      // Small delay before navigation to ensure toast is visible
+      setTimeout(() => {
+        navigate("/");
+      }, 300);
     }
     else
     {
