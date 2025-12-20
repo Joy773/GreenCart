@@ -10,6 +10,7 @@ import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import addressRouter from "./routes/addressRoute.js";
 import orderRouter from "./routes/orderRoute.js";
+import { stripeWebhook } from "./controllers/orderController.js";
 const app = express();
 
 
@@ -24,6 +25,8 @@ const allowedOrigins = [
   "http://127.0.0.1:5173",
   "http://127.0.0.1:5174",
 ];
+
+app.post('/stripe', express.raw({type: 'application/json'}), stripeWebhook);
 
 //Middleware Configuration
 app.use(express.json());
