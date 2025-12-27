@@ -77,11 +77,13 @@ export const AppContextProvider = ({children}) => {
             }
             else
             {
-                toast.error(data.message);
+                console.log(data.message);
+                // Don't show toast on background data fetch failures
             }
         }
         catch (error) {
-            toast.error(error.message);
+            console.log(error.message);
+            // Don't show toast on background data fetch failures - errors are normal if server isn't running
         }
     }
 
