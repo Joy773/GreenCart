@@ -1,5 +1,5 @@
 import Order from "../models/Order.js";
-import Product from "../models/Product.js";
+import Product from "../models/Product.js"; 
 const TAX_RATE = 0.02;
 
 const calcAmountWithTax = async (items) => {
@@ -15,7 +15,7 @@ const calcAmountWithTax = async (items) => {
 
 // Place order COD : /api/order/cod
 export const placeOrderCOD = async (req, res) => {
-  try {
+    try {
     const { userId, items, address } = req.body;
 
     if (!userId) return res.json({ success: false, message: "Unauthorized" });
@@ -29,18 +29,18 @@ export const placeOrderCOD = async (req, res) => {
     }
 
     await Order.create({
-      userId,
-      items,
-      amount,
-      address,
+        userId, 
+        items,
+        amount, 
+        address, 
       paymentType: "COD",
-      isPaid: false,
+        isPaid: false,
     });
 
     return res.json({ success: true, message: "Order Placed Successfully" });
   } catch (error) {
     return res.json({ success: false, message: error.message });
-  }
+    }
 };
 
 
@@ -51,7 +51,7 @@ export const getOrderByUserId = async (req, res) => {
     if (!userId) return res.json({ success: false, message: "Unauthorized" });
 
     const orders = await Order.find({
-      userId,
+            userId,
       $or: [{ paymentType: "COD" }, { isPaid: true }],
     })
       .populate("items.product address")
@@ -60,7 +60,7 @@ export const getOrderByUserId = async (req, res) => {
     return res.json({ success: true, orders });
   } catch (error) {
     return res.json({ success: false, message: error.message });
-  }
+    }
 };
 
 // Get All orders (for seller / admin) : /api/order/seller
@@ -75,5 +75,5 @@ export const getAllOrders = async (req, res) => {
     return res.json({ success: true, orders });
   } catch (error) {
     return res.json({ success: false, message: error.message });
-  }
+    }
 };

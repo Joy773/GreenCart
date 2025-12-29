@@ -6,7 +6,9 @@ const connectDB = async () => {
             console.log("Connected to MongoDB")
         );
     
-        await mongoose.connect(`${process.env.MONGODB_URI}/greencart`);
+        // Remove trailing slash if present and append database name
+        const uri = process.env.MONGODB_URI.replace(/\/$/, '');
+        await mongoose.connect(`${uri}/greencart`);
     } 
     catch (error) {
         console.log(error.message);
